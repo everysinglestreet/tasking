@@ -1,0 +1,118 @@
+version: 3
+
+dotenv: ['.env']
+
+tasks:
+  network:create:
+    desc: 'Create a docker network for all ESS containers'
+    status:
+      - test "$(docker network ls -q -f name=ess-network)"
+    cmds:
+      - docker network create ess-network --driver bridge
+
+  basemap:restart:
+    desc: 'Restart the ess-basemap container'
+    cmds:
+      - docker pull {{.BASEMAP_DOCKER_IMAGE}}
+      - cmd: docker stop ess-basemap
+        ignore_error: true
+      - cmd: docker rm ess-basemap
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-basemap \
+          --publish 8080:8080 \
+          --restart unless-stopped \
+          --volume {{.BASEMAP_DATA_PATH}}:/data \
+          {{.BASEMAP_DOCKER_IMAGE}} \
+          -c basemap-config.json
+
+  overlay:restart:
+    desc: 'Restart the ess-overlay container'
+    cmds:
+      - docker pull {{.OVERLAY_DOCKER_IMAGE}}
+      - cmd: docker stop ess-overlay
+        ignore_error: true
+      - cmd: docker rm ess-overlay
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-overlay \
+          --publish 8081:8080 \
+          --restart unless-stopped \
+          --volume {{.OVERLAY_DATA_PATH}}:/data \
+          {{.OVERLAY_DOCKER_IMAGE}} \
+          -c overlay-config.json
+
+  api:restart:
+    desc: 'Restart the ess-api container'
+    cmds:
+      - docker pull {{.API_DOCKER_IMAGE}}
+      - cmd: docker stop ess-api
+        ignore_error: true
+      - cmd: docker rm ess-api
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --env-file {{.API_ENV_PATH}} \
+          --name ess-api \
+          --publish 8000:8000 \
+          --restart unless-stopped \
+          --volume {{.API_DATA_PATH}}:/data \
+          {{.API_DOCKER_IMAGE}}
+
+  tilemaker:execute:
+    desc: 'Execute the tilemaker container'
+    vars:
+      TILEMAKER_INPUT: '{{.TILEMAKER_INPUT | default ""}}'
+      TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT | default ""}}'
+    cmds:
+      - docker pull {{.TILEMAKER_DOCKER_IMAGE}}
+      - cmd: docker stop ess-tilemaker
+        ignore_error: true
+      - cmd: docker rm ess-tilemaker
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-tilemaker \
+          --volume {{.TILEMAKER_DATA_PATH}}:/data \
+          {{.TILEMAKER_DOCKER_IMAGE}} \
+          --input {{.TILEMAKER_INPUT}} \
+          --output {{.TILEMAKER_OUTPUT}}
+
+  osmosis:execute:
+    desc: 'Execute the osmosis container'
+    vars:
+      OSMOSIS_INPUT: '{{.OSMOSIS_INPUT | default ""}}'
+      OSMOSIS_OUTPUT: '{{.OSMOSIS_OUTPUT | default ""}}'
+    cmds:
+      - docker pull {{.OSMOSIS_DOCKER_IMAGE}}
+      - cmd: docker stop ess-osmosis
+        ignore_error: true
+      - cmd: docker rm ess-osmosis
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-osmosis \
+          --volume {{.OSMOSIS_DATA_PATH}}:/data \
+          {{.OSMOSIS_DOCKER_IMAGE}} \
+          --input {{.OSMOSIS_INPUT}} \
+          --output {{.OSMOSIS_OUTPUT}}
+
+  ess:start:all:
+    desc: 'Start all ESS containers (ess-basemap, ess-overlay and ess-api)'
+    cmds:
+      - task: network:create
+      - task: basemap:restart
+      - task: overlay:restart
+      - task: api:restart
+
+  docker:logs:
+    desc: 'Show the logs of all ESS containers'
+    cmds:
+      - docker ps -q | xargs -L 1 docker logs --tail=0 --follow --timestamps
