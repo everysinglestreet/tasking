@@ -24,9 +24,11 @@ Add a `.env` file in the root of the project with the following content:
 ```bash
 BASEMAP_DOCKER_IMAGE=""   # value for the basemap docker image
 BASEMAP_DATA_PATH=""      # value for the basemap data path
+BASEMAP_USER_API_DATA=""  # value for the basemap user api data path
 
 OVERLAY_DOCKER_IMAGE=""   # value for the overlay docker image
 OVERLAY_DATA_PATH=""      # value for the overlay data path
+OVERLAY_USER_API_DATA=""  # value for the overlay user api data path
 
 API_DOCKER_IMAGE=""       # value for the api docker image
 API_DATA_PATH=""          # value for the api data path

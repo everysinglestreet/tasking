@@ -25,8 +25,9 @@ tasks:
           --publish 8080:8080 \
           --restart unless-stopped \
           --volume {{.BASEMAP_DATA_PATH}}:/data \
+          --volume {{.BASEMAP_USER_API_DATA}}:/api \
           {{.BASEMAP_DOCKER_IMAGE}} \
-          -c basemap-config.json
+          -c /data/config/basemap.json
 
   overlay:restart:
     desc: 'Restart the ess-overlay container'
@@ -43,8 +44,9 @@ tasks:
           --publish 8081:8080 \
           --restart unless-stopped \
           --volume {{.OVERLAY_DATA_PATH}}:/data \
+          --volume {{.OVERLAY_USER_API_DATA}}:/api \
           {{.OVERLAY_DOCKER_IMAGE}} \
-          -c overlay-config.json
+          -c /data/config/overlay.json
 
   api:restart:
     desc: 'Restart the ess-api container'
