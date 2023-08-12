@@ -105,8 +105,8 @@ tasks:
           --name ess-osmosis \
           --volume {{.OSMOSIS_DATA_PATH}}:/data \
           {{.OSMOSIS_DOCKER_IMAGE}} \
-          --input {{.OSMOSIS_INPUT}} \
-          --output {{.OSMOSIS_OUTPUT}}
+          --read-xml {{.OSMOSIS_INPUT}} \
+          --write-pbf {{.OSMOSIS_OUTPUT}}
 
   ess:restart:all:
     desc: 'Restart all ESS containers (ess-basemap, ess-overlay and ess-api)'
