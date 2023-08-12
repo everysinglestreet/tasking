@@ -69,6 +69,7 @@ tasks:
     vars:
       TILEMAKER_INPUT: '{{.TILEMAKER_INPUT | default ""}}'
       TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT | default ""}}'
+      TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG | default ""}}'
     cmds:
       - docker pull {{.TILEMAKER_DOCKER_IMAGE}}
       - cmd: docker stop ess-tilemaker
@@ -82,7 +83,8 @@ tasks:
           --volume {{.TILEMAKER_DATA_PATH}}:/data \
           {{.TILEMAKER_DOCKER_IMAGE}} \
           --input {{.TILEMAKER_INPUT}} \
-          --output {{.TILEMAKER_OUTPUT}}
+          --output {{.TILEMAKER_OUTPUT}} \
+          --config {{.TILEMAKER_CONFIG}}
 
   osmosis:execute:
     desc: 'Execute the osmosis container'
