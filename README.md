@@ -14,7 +14,7 @@ Here is a list of the task commands and their explaination:
 | api:restart       | `task api:restart`                                                               | Restart the ess-api container                                   |
 | tilemaker:execute | `TILEMAKER_INPUT=input_path TILEMAKER_OUTPUT=output_path task tilemaker:execute` | Execute the tilemaker container                                 |
 | osmosis:execute   | `OSMOSIS_INPUT=input_path OSMOSIS_OUTPUT=output_path task osmosis:execute`       | Execute the osmosis container                                   |
-| ess:start:all     | `task ess:start:all`                                                             | Start all ESS containers (ess-basemap, ess-overlay and ess-api) |
+| ess:restart:all     | `task ess:restart:all`                                                             | Restart all ESS containers (ess-basemap, ess-overlay and ess-api) |
 | docker:logs       | `task docker:logs`                                                               | Show the logs of all ESS containers                             |
 
 ## Setup

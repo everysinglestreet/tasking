@@ -104,8 +104,8 @@ tasks:
           --input {{.OSMOSIS_INPUT}} \
           --output {{.OSMOSIS_OUTPUT}}
 
-  ess:start:all:
-    desc: 'Start all ESS containers (ess-basemap, ess-overlay and ess-api)'
+  ess:restart:all:
+    desc: 'Restart all ESS containers (ess-basemap, ess-overlay and ess-api)'
     cmds:
       - task: network:create
       - task: basemap:restart
