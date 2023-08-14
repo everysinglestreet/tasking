@@ -133,6 +133,28 @@ tasks:
       - task: overlay:restart
       - task: api:restart
 
+  regenerate:overlay:
+    desc: 'Regenerate the overlay'
+    vars:
+      OSMOSIS_READ_XML: '{{.OSMOSIS_READ_XML | default ""}}'
+      OSMOSIS_WRITE_PBF: '{{.OSMOSIS_WRITE_PBF | default ""}}'
+      TILEMAKER_INPUT: '{{.TILEMAKER_INPUT | default ""}}'
+      TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT | default ""}}'
+      TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG | default ""}}'
+    cmds:
+      - task: osmosis:execute
+        vars:
+          OSMOSIS_READ_XML: '{{.OSMOSIS_READ_XML}}'
+          OSMOSIS_WRITE_PBF: '{{.OSMOSIS_WRITE_PBF}}'
+      - docker wait ess-osmosis
+      - task: tilemaker:execute
+        vars:
+          TILEMAKER_INPUT: '{{.TILEMAKER_INPUT}}'
+          TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT}}'
+          TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG}}'
+      - docker wait ess-tilemaker
+      - task: overlay:restart
+
   docker:logs:
     desc: 'Show the logs of all ESS containers'
     cmds:
