@@ -19,8 +19,8 @@ tasks:
 
   api:image:pull:
     desc: 'Pull the latest ess-api docker image'
-    status:
-      - test "$(docker images -q {{.API_DOCKER_IMAGE}})"
+    # status:
+    #   - test "$(docker images -q {{.API_DOCKER_IMAGE}})"
     cmds:
       - docker pull {{.API_DOCKER_IMAGE}}
 
