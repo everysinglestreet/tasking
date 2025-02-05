@@ -1,0 +1,161 @@
+version: 3
+
+dotenv: ['.env']
+
+tasks:
+  basemap:image:pull:
+    desc: 'Pull the latest ess-basemap docker image'
+    status:
+      - test "$(docker images -q {{.BASEMAP_DOCKER_IMAGE}})"
+    cmds:
+      - docker pull {{.BASEMAP_DOCKER_IMAGE}}
+
+  overlay:image:pull:
+    desc: 'Pull the latest ess-overlay docker image'
+    status:
+      - test "$(docker images -q {{.OVERLAY_DOCKER_IMAGE}})"
+    cmds:
+      - docker pull {{.OVERLAY_DOCKER_IMAGE}}
+
+  api:image:pull:
+    desc: 'Pull the latest ess-api docker image'
+    # status:
+    #   - test "$(docker images -q {{.API_DOCKER_IMAGE}})"
+    cmds:
+      - docker pull {{.API_DOCKER_IMAGE}}
+
+  tilemaker:image:pull:
+    desc: 'Pull the latest ess-tilemaker docker image'
+    status:
+      - test "$(docker images -q {{.TILEMAKER_DOCKER_IMAGE}})"
+    cmds:
+      - docker pull {{.TILEMAKER_DOCKER_IMAGE}}
+
+  osmosis:image:pull:
+    desc: 'Pull the latest ess-osmosis docker image'
+    status:
+      - test "$(docker images -q {{.OSMOSIS_DOCKER_IMAGE}})"
+    cmds:
+      - docker pull {{.OSMOSIS_DOCKER_IMAGE}}
+
+  basemap:restart:
+    desc: 'Restart the ess-basemap container'
+    cmds:
+      - task: basemap:image:pull
+      - cmd: docker stop ess-basemap && docker rm ess-basemap
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-basemap \
+          --publish 8080:8080 \
+          --restart unless-stopped \
+          --volume {{.BASEMAP_DATA_PATH}}:/data \
+          --volume {{.BASEMAP_USER_API_DATA}}:/api \
+          {{.BASEMAP_DOCKER_IMAGE}} \
+          -c /data/config/basemap.json
+
+  overlay:restart:
+    desc: 'Restart the ess-overlay container'
+    cmds:
+      - task: overlay:image:pull
+      - cmd: docker stop ess-overlay && docker rm ess-overlay
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-overlay \
+          --publish 8081:8080 \
+          --restart unless-stopped \
+          --volume {{.OVERLAY_DATA_PATH}}:/data \
+          --volume {{.OVERLAY_USER_API_DATA}}:/api \
+          {{.OVERLAY_DOCKER_IMAGE}} \
+          -c /data/config/overlay.json
+
+  api:restart:
+    desc: 'Restart the ess-api container'
+    cmds:
+      - task: api:image:pull
+      - cmd: docker stop ess-api && docker rm ess-api
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --env-file {{.API_ENV_PATH}} \
+          --name ess-api \
+          --publish 8000:8000 \
+          --restart unless-stopped \
+          --volume {{.API_DATA_PATH}}:/data \
+          {{.API_DOCKER_IMAGE}}
+
+  tilemaker:execute:
+    desc: 'Execute the tilemaker container'
+    vars:
+      TILEMAKER_INPUT: '{{.TILEMAKER_INPUT | default ""}}'
+      TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT | default ""}}'
+      TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG | default ""}}'
+    cmds:
+      - task: tilemaker:image:pull
+      - cmd: docker stop ess-tilemaker && docker rm ess-tilemaker
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-tilemaker \
+          --volume {{.TILEMAKER_DATA_PATH}}:/data \
+          {{.TILEMAKER_DOCKER_IMAGE}} \
+          --input {{.TILEMAKER_INPUT}} \
+          --output {{.TILEMAKER_OUTPUT}} \
+          --config {{.TILEMAKER_CONFIG}}
+
+  osmosis:execute:
+    desc: 'Execute the osmosis container'
+    vars:
+      OSMOSIS_READ_XML: '{{.OSMOSIS_READ_XML | default ""}}'
+      OSMOSIS_WRITE_PBF: '{{.OSMOSIS_WRITE_PBF | default ""}}'
+    cmds:
+      - task: osmosis:image:pull
+      - cmd: docker stop ess-osmosis && docker rm ess-osmosis
+        ignore_error: true
+      - >
+        docker run \
+          --detach \
+          --name ess-osmosis \
+          --volume {{.OSMOSIS_DATA_PATH}}:/data \
+          {{.OSMOSIS_DOCKER_IMAGE}} \
+          --read-xml {{.OSMOSIS_READ_XML}} \
+          --write-pbf {{.OSMOSIS_WRITE_PBF}}
+
+  ess:restart:all:
+    desc: 'Restart all ESS containers (ess-basemap, ess-overlay and ess-api)'
+    cmds:
+      - task: basemap:restart
+      - task: overlay:restart
+      - task: api:restart
+
+  regenerate:overlay:
+    desc: 'Regenerate the overlay'
+    vars:
+      OSMOSIS_READ_XML: '{{.OSMOSIS_READ_XML | default ""}}'
+      OSMOSIS_WRITE_PBF: '{{.OSMOSIS_WRITE_PBF | default ""}}'
+      TILEMAKER_INPUT: '{{.TILEMAKER_INPUT | default ""}}'
+      TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT | default ""}}'
+      TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG | default ""}}'
+    cmds:
+      - task: osmosis:execute
+        vars:
+          OSMOSIS_READ_XML: '{{.OSMOSIS_READ_XML}}'
+          OSMOSIS_WRITE_PBF: '{{.OSMOSIS_WRITE_PBF}}'
+      - docker wait ess-osmosis
+      - task: tilemaker:execute
+        vars:
+          TILEMAKER_INPUT: '{{.TILEMAKER_INPUT}}'
+          TILEMAKER_OUTPUT: '{{.TILEMAKER_OUTPUT}}'
+          TILEMAKER_CONFIG: '{{.TILEMAKER_CONFIG}}'
+      - docker wait ess-tilemaker
+      - task: overlay:restart
+
+  docker:logs:
+    desc: 'Show the logs of all ESS containers'
+    cmds:
+      - docker ps -q | xargs -L 1 docker logs --tail=0 --follow --timestamps
